@@ -24,4 +24,11 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/dashboard/data', [DashboardController::class, 'dashboardData'])
         ->name('dashboard.data');
+
+    Route::get('/test', function () {
+        return response()->json([
+            'status' => 'Backend Connected Successfully'
+        ]);
+    });
 });
+
