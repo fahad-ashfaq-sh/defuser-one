@@ -125,7 +125,7 @@ export default function CompletedScreen({ onNavigateHome }: CompletedScreenProps
           style={styles.continueButton}
           onPress={onNavigateHome}
         >
-          <Text style={styles.continueButtonText}>Continue Monitoring Operations</Text>
+          <Text style={styles.continueButtonText} maxFontSizeMultiplier={1.2}>Continue Monitoring Operations</Text>
           <Feather name="chevron-right" size={20} color={theme.colors.text} />
         </TouchScale>
 

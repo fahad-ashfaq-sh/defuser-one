@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "DefuserOne",
-    "slug": "DefuserOne",
+    "slug": "defuser-one",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,10 +21,17 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.visionedge.defuserone"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3716cb25-9260-46c4-a554-4d2c4a70cf8d"
+      }
+    },
+    "owner": "vision-edge"
   }
 }

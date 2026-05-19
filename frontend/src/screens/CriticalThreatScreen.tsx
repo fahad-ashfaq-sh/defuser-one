@@ -272,10 +272,10 @@ export default function CriticalThreatScreen({
                 <Feather name="chevrons-right" size={14} color={theme.colors.text} />
               </Animated.View>
               <View style={styles.deployTextContainer}>
-                <Text style={styles.deployText}>
+                <Text style={styles.deployText} maxFontSizeMultiplier={1.2}>
                   {isDeploying ? 'DEPLOYING' : 'SWIPE TO DEPLOY'}
                 </Text>
-                <Text style={styles.deploySubtext}>AUTONOMOUS PATCH</Text>
+                <Text style={styles.deploySubtext} maxFontSizeMultiplier={1.2}>AUTONOMOUS PATCH</Text>
               </View>
             </View>
 
@@ -284,7 +284,7 @@ export default function CriticalThreatScreen({
                 style={styles.dismissButton}
                 onPress={() => setDismissModalVisible(true)}
               >
-                <Text style={styles.dismissButtonText}>Dismiss Threat</Text>
+                <Text style={styles.dismissButtonText} maxFontSizeMultiplier={1.2}>Dismiss Threat</Text>
               </TouchScale>
             )}
 
@@ -298,7 +298,7 @@ export default function CriticalThreatScreen({
                 scaleTo={0.98}
               >
                 <View style={styles.secondaryCtaOverlay} pointerEvents="none" />
-                <Text style={styles.secondaryCtaText}>Inspect Agent Trace First</Text>
+                <Text style={styles.secondaryCtaText} maxFontSizeMultiplier={1.2}>Inspect Agent Trace First</Text>
                 <Feather name="chevron-right" size={24} color={theme.colors.text} />
               </TouchScale>
             )}
@@ -370,7 +370,7 @@ export default function CriticalThreatScreen({
                 style={styles.modalCancelButton}
                 onPress={() => setDismissModalVisible(false)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText} maxFontSizeMultiplier={1.2}>Cancel</Text>
               </TouchScale>
               <TouchScale
                 style={styles.modalConfirmButton}
@@ -379,7 +379,7 @@ export default function CriticalThreatScreen({
                   onDismiss?.();
                 }}
               >
-                <Text style={styles.modalConfirmText}>Dismiss</Text>
+                <Text style={styles.modalConfirmText} maxFontSizeMultiplier={1.2}>Dismiss</Text>
               </TouchScale>
             </View>
           </View>

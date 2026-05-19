@@ -220,14 +220,14 @@ export default function HomeScreen({ onNavigate, onViewHistory, onIngestResult }
               onPress={() => setActiveTab('pdf')}
             >
               <Feather name="file" size={14} color={activeTab === 'pdf' ? theme.colors.text : 'rgba(218,226,253,0.6)'} />
-              <Text style={[styles.tabButtonText, activeTab === 'pdf' && styles.tabButtonTextActive]}>Upload PDF</Text>
+              <Text style={[styles.tabButtonText, activeTab === 'pdf' && styles.tabButtonTextActive]} maxFontSizeMultiplier={1.2}>Upload PDF</Text>
             </TouchScale>
             <TouchScale
               style={[styles.tabButton, activeTab === 'text' && styles.tabButtonActive]}
               onPress={() => setActiveTab('text')}
             >
               <Feather name="edit-3" size={14} color={activeTab === 'text' ? theme.colors.text : 'rgba(218,226,253,0.6)'} />
-              <Text style={[styles.tabButtonText, activeTab === 'text' && styles.tabButtonTextActive]}>Paste Raw Text</Text>
+              <Text style={[styles.tabButtonText, activeTab === 'text' && styles.tabButtonTextActive]} maxFontSizeMultiplier={1.2}>Paste Raw Text</Text>
             </TouchScale>
           </View>
           {activeTab === 'pdf' ? (
@@ -245,7 +245,7 @@ export default function HomeScreen({ onNavigate, onViewHistory, onIngestResult }
                   <Text style={styles.dropzoneDescText}>enabled.</Text>
                 </View>
                 <View style={styles.selectDocumentButton}>
-                  <Text style={styles.selectDocumentButtonText}>Select Document</Text>
+                  <Text style={styles.selectDocumentButtonText} maxFontSizeMultiplier={1.2}>Select Document</Text>
                 </View>
               </View>
             </TouchScale>
@@ -263,7 +263,7 @@ export default function HomeScreen({ onNavigate, onViewHistory, onIngestResult }
               <View style={styles.textInputButtons}>
                 <TouchScale style={styles.pasteButton} onPress={handlePasteText}>
                   <Feather name="clipboard" size={16} color={theme.colors.text} />
-                  <Text style={styles.pasteButtonText}>Paste Text</Text>
+                  <Text style={styles.pasteButtonText} maxFontSizeMultiplier={1.2}>Paste Text</Text>
                 </TouchScale>
                 <TouchScale
                   style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
@@ -271,7 +271,7 @@ export default function HomeScreen({ onNavigate, onViewHistory, onIngestResult }
                   disabled={!canSubmit || isSubmitting}
                 >
                   <Feather name="send" size={16} color={theme.colors.text} />
-                  <Text style={styles.submitButtonText}>Submit</Text>
+                  <Text style={styles.submitButtonText} maxFontSizeMultiplier={1.2}>Submit</Text>
                 </TouchScale>
               </View>
             </View>
@@ -306,7 +306,7 @@ export default function HomeScreen({ onNavigate, onViewHistory, onIngestResult }
           })}
           <TouchScale style={styles.viewLogsButton} onPress={onViewHistory}>
             <View style={styles.viewLogsGradient} pointerEvents="none" />
-            <Text style={styles.viewLogsText}>View Audit Logs</Text>
+            <Text style={styles.viewLogsText} maxFontSizeMultiplier={1.2}>View Audit Logs</Text>
           </TouchScale>
         </View>
       </ScrollView>
@@ -396,10 +396,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    width: 380,
   },
   metricCard: {
-    width: 185,
+    width: '48%',
     padding: 17,
     borderRadius: 16,
     borderWidth: 1,
@@ -719,7 +718,7 @@ const styles = StyleSheet.create({
     color: 'rgba(218,226,253,0.5)',
   },
   viewLogsButton: {
-    width: 362,
+    width: '100%',
     alignSelf: 'center',
     marginTop: 8,
     borderRadius: 8,

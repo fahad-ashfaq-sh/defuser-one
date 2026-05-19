@@ -1,7 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Platform, StatusBar } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../../theme';
+
+function getBottomInset(): number {
+  if (Platform.OS !== 'android') return 24;
+  const { height: sH } = Dimensions.get('screen');
+  const { height: wH } = Dimensions.get('window');
+  const statusBarHeight = StatusBar.currentHeight ?? 0;
+  const navBarHeight = Math.max(0, sH - wH - statusBarHeight);
+  return navBarHeight + 12;
+}
 
 type BottomNavProps = {
   activeTab: 'home' | 'history';
@@ -46,7 +55,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '100%',
     backgroundColor: theme.colors.card,
-    paddingBottom: 24,
+    paddingBottom: getBottomInset(),
   },
   menuRow: {
     flexDirection: 'row',
