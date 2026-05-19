@@ -1,17 +1,28 @@
 <?php
 namespace App\Services;
 use Illuminate\Support\Facades\Http;
-use Exception;
 use Illuminate\Support\Facades\Log;
 
 class GeminiService
 {
-    private string $apiKey;
-    private string $baseUrl;
+    private array $connections;
+
     public function __construct()
     {
-        $this->apiKey = config('services.gemini.api_key');
-        $this->baseUrl = config('services.gemini.base_url');
+        $this->connections = [
+            [
+                'api_key'  => config('services.gemini.api_key'),
+                'base_url' => config('services.gemini.base_url'),
+            ],
+            [
+                'api_key'  => config('services.gemini.api_key_2'),
+                'base_url' => config('services.gemini.base_url_2'),
+            ],
+            [
+                'api_key'  => config('services.gemini.api_key_3'),
+                'base_url' => config('services.gemini.base_url_3'),
+            ],
+        ];
     }
 
     public function generate(string $prompt, bool $isJson = false, ?string $systemInstruction = null): ?string
@@ -37,17 +48,33 @@ class GeminiService
             $payload['generationConfig']['responseMimeType'] = 'application/json';
         }
 
-        $response = Http::timeout(110)->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
+        foreach ($this->connections as $index => $connection) {
+            if (empty($connection['api_key']) || empty($connection['base_url'])) {
+                continue; // Skip unconfigured endpoints
+            }
 
-        if (!$response->successful()) {
+            $apiKey = $connection['api_key'];
+            $baseUrl = $connection['base_url'];
+            $attemptNum = $index + 1;
+
+            Log::info("GeminiService: Attempting API call with connection #{$attemptNum}");
+
+            $response = Http::timeout(110)->post("{$baseUrl}?key={$apiKey}", $payload);
+
+            if ($response->successful()) {
+                // Return the text directly on success
+                return $response->json('candidates.0.content.parts.0.text', '{}');
+            }
+
             $statusCode = $response->status();
-            Log::error("Gemini API error [{$statusCode}]: " . $response->body());
-            // Return null to signal a hard API failure (429/403/401) — callers must handle null
-            return null;
+            Log::warning("Gemini API error [{$statusCode}] on connection #{$attemptNum}: " . $response->body());
+            
+            // Loop continues to next configured fallback connection
         }
 
-        // Return the text directly
-        return $response->json('candidates.0.content.parts.0.text', '{}');
+        Log::error("GeminiService: All configured API connections failed.");
+        // Return null to signal a hard API failure after all fallbacks exhausted
+        return null;
     }
 
     public function generateJson(string $prompt, ?string $systemInstruction = null): array

@@ -111,8 +111,9 @@ class DocumentIngestAgent
     ],
     // ── luxury-imports ──────────────────────────────────────────────
     'luxury-imports' => [
-        'luxury', 'luxuries', 'luxury item', 'luxury good', 'premium import', 'luxury import', 
-        'luxury smartwatch', 'hdmi cable', 'desk organizer', 'webcam', 'presenter', 'laptop sleeve'
+        'luxury', 'luxuries', 'luxury item', 'luxury good', 'luxury import',
+        'premium import', 'high-end', 'high end', 'luxury product', 'luxury goods',
+        'luxury smartwatch', 'luxury appliance', 'premium goods'
     ]
 ];
 
