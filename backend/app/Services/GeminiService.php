@@ -14,7 +14,7 @@ class GeminiService
         $this->baseUrl = config('services.gemini.base_url');
     }
 
-    public function generate(string $prompt, bool $isJson = false, ?string $systemInstruction = null): string
+    public function generate(string $prompt, bool $isJson = false, ?string $systemInstruction = null): ?string
     {
         $payload = [
             'contents'         => [['parts' => [['text' => $prompt]]]],
@@ -40,8 +40,10 @@ class GeminiService
         $response = Http::timeout(110)->post("{$this->baseUrl}?key={$this->apiKey}", $payload);
 
         if (!$response->successful()) {
-            Log::error("Gemini API error: " . $response->body());
-            return '[]';
+            $statusCode = $response->status();
+            Log::error("Gemini API error [{$statusCode}]: " . $response->body());
+            // Return null to signal a hard API failure (429/403/401) — callers must handle null
+            return null;
         }
 
         // Return the text directly
@@ -52,12 +54,18 @@ class GeminiService
     {
         // Yahan $isJson ko true bhej rahe hain taake Gemini officially perfect JSON de
         $result = $this->generate($prompt, true, $systemInstruction);
-        
+
+        // null means the API returned a hard error (429/403/401) — treat as empty result
+        if ($result === null) {
+            Log::warning('Gemini generateJson: API call failed (null returned). Returning empty array.');
+            return [];
+        }
+
         $decoded = json_decode(trim($result), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             // Error reason log karo
             Log::error("Gemini JSON Parsing failed", [
-                'error' => json_last_error_msg(),
+                'error'      => json_last_error_msg(),
                 'raw_result' => $result
             ]);
             return [];

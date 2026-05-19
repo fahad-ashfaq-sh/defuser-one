@@ -52,7 +52,9 @@ class FiscalThreatAnalyzer
 
             // Calculate per-category daily leakage
             $categoryLeakage = $affectedSkus->sum(function (SkuInventory $sku) use ($taxTier) {
-                $taxDelta       = $taxTier - (float) $sku->applied_tax_rate;
+                // Only a rate INCREASE is a fiscal threat — clamp negative deltas to zero.
+                // If new rate < applied rate, it's a tax cut, not a leakage event.
+                $taxDelta       = max(0.0, $taxTier - (float) $sku->applied_tax_rate);
                 $perUnitLeakage = (float) $sku->base_price * $taxDelta;
                 return $perUnitLeakage * $this->dailyRunRate;
             });
