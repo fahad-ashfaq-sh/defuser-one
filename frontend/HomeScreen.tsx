@@ -16,6 +16,7 @@ import * as Clipboard from 'expo-clipboard';
 import Header from './Header';
 import { theme } from './theme';
 import TouchScale from './src/components/TouchScale';
+import axios, { AxiosError } from 'axios';
 
 const ICON_SIZE = 24;
 
@@ -59,11 +60,36 @@ function UploadIcon() {
   );
 }
 
-export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?: (documentName: string) => void; onViewHistory?: () => void }) {
+export default function HomeScreen({ onNavigate, onViewHistory, onIngestResult }: { onNavigate?: (documentName: string) => void; onViewHistory?: () => void; onIngestResult?: (payload: any) => void }) {
   const [activeTab, setActiveTab] = useState<'pdf' | 'text'>('pdf');
   const [textInputValue, setTextInputValue] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const [stats, setStats] = useState<{ total_ingested: number; active_alerts: number; regulatory_changes: number; actively_monitored: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await axios.get('https://defuser-backend-413383043452.asia-southeast1.run.app/api/v1/dashboard/data', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+        const { total_ingested, active_alerts, regulatory_changes, actively_monitored } = response.data.data.stats;
+        setStats({ total_ingested, active_alerts, regulatory_changes, actively_monitored });
+        setLogs(response.data.data.logs);
+      } catch (error) {
+        console.error('Dashboard fetch failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -72,16 +98,27 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
     ]).start();
   }, [fadeAnim, slideAnim]);
 
-  const handleIngestion = (dataType: string, dataValue: string) => {
-    onNavigate?.(dataValue);
-  };
-
   const handlePickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({
       type: ['application/pdf'],
     });
     if (!result.canceled && result.assets?.[0]) {
-      handleIngestion('pdf', result.assets[0].name);
+      const asset = result.assets[0];
+      setIsSubmitting(true);
+      onNavigate?.(asset.name);
+      const formData = new FormData();
+      formData.append('pdf', {
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType || 'application/pdf',
+      } as any);
+      axios.post('https://defuser-backend-413383043452.asia-southeast1.run.app/api/v1/directive/ingest', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((response) => {
+        onIngestResult?.(response.data);
+      }).catch((error) => {
+        console.error("Backend Validation Error:", (error as AxiosError)?.response?.data || (error as Error).message);
+      });
     }
   };
 
@@ -92,7 +129,18 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
 
   const handleSubmitText = () => {
     if (textInputValue.trim().length >= 300) {
-      handleIngestion('text', textInputValue);
+      setIsSubmitting(true);
+      onNavigate?.(textInputValue);
+      axios.post('https://defuser-backend-413383043452.asia-southeast1.run.app/api/v1/directive/ingest', { raw_text: textInputValue }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      }).then((response) => {
+        onIngestResult?.(response.data);
+      }).catch((error) => {
+        console.error("Backend Validation Error:", (error as AxiosError)?.response?.data || (error as Error).message);
+      });
     }
   };
 
@@ -126,8 +174,8 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
             <View style={styles.metricContent}>
               <Text style={styles.metricLabel}>Total ingested</Text>
               <View style={styles.metricValueRow}>
-                <Text style={styles.metricValue}>16</Text>
-                <Text style={styles.metricUnit}>circulars</Text>
+                <Text style={styles.metricValue}>{loading ? '-' : stats?.total_ingested}</Text>
+                {!loading && <Text style={styles.metricSuffix}> Circulars</Text>}
               </View>
             </View>
           </View>
@@ -136,7 +184,7 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
             <View style={styles.metricContent}>
               <Text style={styles.metricLabel}>active Alerts</Text>
               <View style={styles.metricValueRow}>
-                <Text style={styles.metricValue}>0</Text>
+                <Text style={styles.metricValue}>{loading ? '-' : stats?.active_alerts}</Text>
               </View>
             </View>
           </View>
@@ -145,8 +193,8 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
             <View style={styles.metricContent}>
               <Text style={styles.metricLabel}>Regulatory Changes</Text>
               <View style={styles.metricValueRow}>
-                <Text style={styles.metricValue}>16</Text>
-                <Text style={styles.metricUnit}>Detected</Text>
+                <Text style={styles.metricValue}>{loading ? '-' : stats?.regulatory_changes}</Text>
+                {!loading && <Text style={styles.metricSuffix}> Detected</Text>}
               </View>
             </View>
           </View>
@@ -155,8 +203,8 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
             <View style={styles.metricContent}>
               <Text style={styles.metricLabel}>Actively Monitored</Text>
               <View style={styles.metricValueRow}>
-                <Text style={styles.metricValue}>1,482</Text>
-                <Text style={styles.metricUnit}>SKUs</Text>
+                <Text style={styles.metricValue}>{loading ? '-' : stats?.actively_monitored}</Text>
+                {!loading && <Text style={styles.metricSuffix}> SKUs</Text>}
               </View>
             </View>
           </View>
@@ -183,7 +231,7 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
             </TouchScale>
           </View>
           {activeTab === 'pdf' ? (
-            <TouchScale style={styles.dropzone} onPress={handlePickDocument}>
+            <TouchScale style={styles.dropzone} onPress={handlePickDocument} disabled={isSubmitting}>
               <View style={styles.dropzoneContent}>
                 <UploadIcon />
                 <Text style={styles.dropzoneTitle}>Upload regulatory document</Text>
@@ -220,7 +268,7 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
                 <TouchScale
                   style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
                   onPress={handleSubmitText}
-                  disabled={!canSubmit}
+                  disabled={!canSubmit || isSubmitting}
                 >
                   <Feather name="send" size={16} color={theme.colors.text} />
                   <Text style={styles.submitButtonText}>Submit</Text>
@@ -234,53 +282,28 @@ export default function HomeScreen({ onNavigate, onViewHistory }: { onNavigate?:
           <View style={styles.recentHeader}>
             <Text style={styles.recentTitle}>Recent Ingestions</Text>
           </View>
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Feather name="file" size={16} color="#dae2fd" style={{ opacity: 0.7 }} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityDocName}>
-                EU Tax Compliance Update 2024.pdf
-              </Text>
-              <View style={styles.activityMeta}>
-                <Text style={styles.activityStatus}>Processed</Text>
-                <Text style={styles.activitySep}>•</Text>
-                <Text style={styles.activityTime}>10 mins ago</Text>
+          {logs.slice(0, 3).map((log: any, index: number) => {
+            const isFailed = log.status === 'failed';
+            return (
+              <View key={index} style={styles.activityItem}>
+                <View style={styles.activityIcon}>
+                  <Feather name={isFailed ? 'alert-circle' : 'file'} size={16} color={isFailed ? theme.colors.risk : '#dae2fd'} style={{ opacity: 0.7 }} />
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityDocName} numberOfLines={1} ellipsizeMode="tail">
+                    {log.file_name}
+                  </Text>
+                  <View style={styles.activityMeta}>
+                    <Text style={[styles.activityStatus, { color: isFailed ? theme.colors.risk : theme.colors.safe }]}>
+                      {isFailed ? 'Dismissed' : 'Processed'}
+                    </Text>
+                    <Text style={styles.activitySep}>•</Text>
+                    <Text style={styles.activityTime}>{log.time}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Feather name="file" size={16} color="#dae2fd" style={{ opacity: 0.7 }} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityDocName}>
-                Q3 Internal Audit Findings.docx
-              </Text>
-              <View style={styles.activityMeta}>
-                <Text style={styles.activityStatus}>Processed</Text>
-                <Text style={styles.activitySep}>•</Text>
-                <Text style={styles.activityTime}>2 hours ago</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Feather name="alert-circle" size={16} color={theme.colors.risk} style={{ opacity: 0.7 }} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityDocName}>
-                Legacy_Vendor_Contracts_Archive.zip
-              </Text>
-              <View style={styles.activityMeta}>
-                <Text style={[styles.activityStatus, { color: theme.colors.risk }]}>
-                  Failed - Format
-                </Text>
-                <Text style={styles.activitySep}>•</Text>
-                <Text style={styles.activityTime}>Yesterday</Text>
-              </View>
-            </View>
-          </View>
+            );
+          })}
           <TouchScale style={styles.viewLogsButton} onPress={onViewHistory}>
             <View style={styles.viewLogsGradient} pointerEvents="none" />
             <Text style={styles.viewLogsText}>View Audit Logs</Text>
@@ -410,11 +433,10 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     letterSpacing: -1.6,
   },
-  metricUnit: {
+  metricSuffix: {
     fontFamily: theme.fonts.sansRegular,
     fontSize: 16,
-    color: '#b3b3b3',
-    textTransform: 'capitalize',
+    color: theme.colors.muted,
     lineHeight: 25,
   },
   ingestSection: {

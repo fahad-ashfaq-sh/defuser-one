@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import {
   ScrollView,
   View,
@@ -21,35 +22,21 @@ export interface CriticalThreatScreenProps {
   onInspectTrace?: () => void;
   onDeployComplete?: () => void;
   onDismiss?: () => void;
-  leakageAmount?: string;
-  leakageUnit?: string;
-  effectiveDate?: string;
-  riskLevel?: string;
-  actionSummary?: string;
+  payload?: any;
 }
 
 const TERMINAL_LOG_LINES = [
-  'Antigravity executing: patch_pricing_db()',
-  'Targeting category: "Import-X"',
-  'Updating 412 inventory entries...',
-  'Applying revised tax_tier: 0.25',
-  'Synchronizing checkout pricing...',
-  'Verifying margin compliance...',
-  'SUCCESS: 200 OK — Records patched',
-  'Dispatching compliance notification...',
-  'VP Finance notified successfully',
+  '[AUTH] Verifying cryptographic deployment signatures...',
+  '[OVERRIDE] Elevating privileges for core schema modification...',
+  '[EXECUTE] Applying delta patch to regulatory frameworks...',
+  '[AUDIT] Changes committed. Immutable audit ledger updated.',
 ];
 
 const AGENT_TRACE_LINES = [
-  'Agent-A: Analyzing document structure...',
-  'Agent-A: Extracting fiscal entities from section 3.2',
-  'Agent-B: Cross-referencing tariff codes with HTS database',
-  'Agent-B: Found 412 SKUs matching category "Import-X"',
-  'Agent-C: Computing tax delta for tier change: 0.18 → 0.25',
-  'Agent-C: Estimated revenue impact: Rs. 1.4M/year',
-  'Agent-A: Flagging critical exposure — effective Oct 01, 2023',
-  'Agent-D: Verifying compliance with section 8(f) provisions',
-  'Lead Agent: Recommendation generated — apply tax_tier patch',
+  '[1/4] Ingesting document matrix; verifying cryptographic integrity.',
+  '[2/4] Isolating tariff vectors and regulatory mandates.',
+  '[3/4] Querying active inventory database for affected SKUs.',
+  '[4/4] Impact analysis complete; patch sequence formulation verified.',
 ];
 
 function RiskDot() {
@@ -83,12 +70,16 @@ export default function CriticalThreatScreen({
   onInspectTrace,
   onDeployComplete,
   onDismiss,
-  leakageAmount = 'Rs. 1.4M',
-  leakageUnit = '/ day',
-  effectiveDate = 'Oct 01, 2023',
-  riskLevel = 'Critical',
-  actionSummary = 'This is the summary of the suggested action (e.g. Change the Tax to 18%)',
+  payload,
 }: CriticalThreatScreenProps) {
+  const rawLeakage = payload?.totals?.total_daily_leakage;
+  const leakageAmount = rawLeakage != null ? `Rs. ${Number(rawLeakage).toLocaleString()}` : 'Rs. 0';
+  const leakageUnit = '/ day';
+  const effectiveDate = payload?.effective_date || 'TBD';
+  const riskLevel = (payload?.totals?.threat_count || 0) > 0 ? 'Critical' : 'Low';
+  const rawActionSummary = payload?.action_summary || '';
+  const actionSummary = rawActionSummary.includes('not available') ? 'Affected SKUs have been identified based on detected policy changes. Deploy patches to synchronize tax rates.' : rawActionSummary;
+  const threatCount = payload?.totals?.threat_count ?? 0;
   const [deployState, setDeployState] = useState<'idle' | 'deploying' | 'completed'>('idle');
   const [visibleLogCount, setVisibleLogCount] = useState(0);
   const [dismissModalVisible, setDismissModalVisible] = useState(false);
@@ -107,6 +98,8 @@ export default function CriticalThreatScreen({
   const pan = useRef(new Animated.Value(0)).current;
   const deployStateRef = useRef(deployState);
   deployStateRef.current = deployState;
+  const payloadRef = useRef(payload);
+  payloadRef.current = payload;
   const onDeployCompleteRef = useRef(onDeployComplete);
   onDeployCompleteRef.current = onDeployComplete;
 
@@ -129,6 +122,20 @@ export default function CriticalThreatScreen({
             useNativeDriver: true,
           }).start(() => {
             setDeployState('deploying');
+            const p = payloadRef.current;
+            const body = {
+              patch_id: p?.patch_id,
+              target_category: p?.fiscal_metrics?.[0]?.category_slug || 'default',
+              payload: {
+                tax_tier: p?.fiscal_metrics?.[0]?.tax_tier || 0,
+                margin_status: "SECURED",
+              },
+            };
+            axios.post('https://defuser-backend-413383043452.asia-southeast1.run.app/api/v1/simulation/patch-database', body, {
+              headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            }).catch((error) => {
+              console.error("Patch deploy error:", (error as any)?.response?.data || (error as Error).message);
+            });
           });
         } else {
           Animated.spring(pan, {
@@ -218,6 +225,14 @@ export default function CriticalThreatScreen({
                   <RiskDot />
                   <Text style={styles.metricValue}>{riskLevel}</Text>
                 </View>
+              </View>
+            </View>
+          </View>
+          <View style={styles.metaCard}>
+            <View style={styles.metaContent}>
+              <Text style={styles.metricLabel}>Threat Count</Text>
+              <View style={styles.metricValueRow}>
+                <Text style={styles.metricValue}>{threatCount}</Text>
               </View>
             </View>
           </View>

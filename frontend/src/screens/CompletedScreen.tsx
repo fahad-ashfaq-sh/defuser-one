@@ -13,15 +13,10 @@ import { theme } from '../../theme';
 import TouchScale from '../components/TouchScale';
 
 const TERMINAL_LOG_LINES = [
-  'Antigravity executing: patch_pricing_db()',
-  'Targeting category: "Import-X"',
-  'Updating 412 inventory entries...',
-  'Applying revised tax_tier: 0.25',
-  'Synchronizing checkout pricing...',
-  'Verifying margin compliance...',
-  'SUCCESS: 200 OK — Records patched',
-  'Dispatching compliance notification...',
-  'VP Finance notified successfully',
+  '[AUTH] Verifying cryptographic deployment signatures...',
+  '[OVERRIDE] Elevating privileges for core schema modification...',
+  '[EXECUTE] Applying delta patch to regulatory frameworks...',
+  '[AUDIT] Changes committed. Immutable audit ledger updated.',
 ];
 
 function TerminalLogLine({ text }: { text: string }) {

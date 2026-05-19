@@ -29,6 +29,7 @@ SplashScreen.preventAutoHideAsync();
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'home' | 'parsing' | 'results' | 'completed' | 'history'>('home');
   const [documentName, setDocumentName] = useState('');
+  const [ingestPayload, setIngestPayload] = useState<any>(null);
 
   const navigate = (screen: typeof currentScreen) => {
     LayoutAnimation.configureNext(LAYOUT_CONFIG);
@@ -70,16 +71,20 @@ export default function App() {
             navigate('parsing');
           }}
           onViewHistory={() => navigate('history')}
+          onIngestResult={setIngestPayload}
         />
       )}
       {currentScreen === 'parsing' && (
         <ParsingScreen
           documentName={documentName}
+          payload={ingestPayload}
           onParsingComplete={() => navigate('results')}
         />
       )}
       {currentScreen === 'results' && (
         <CriticalThreatScreen
+          key={ingestPayload ? 'live' : 'loading'}
+          payload={ingestPayload}
           onDeployComplete={() => navigate('completed')}
           onDismiss={() => navigate('home')}
         />
@@ -94,12 +99,14 @@ export default function App() {
           onBack={() => navigate('home')}
         />
       )}
-      <BottomNav
-        activeTab={currentScreen === 'history' ? 'history' : 'home'}
-        onHomePress={() => navigate('home')}
-        onHistoryPress={() => navigate('history')}
-        onPickDocument={handlePickDocument}
-      />
+      {(currentScreen === 'home' || currentScreen === 'history') && (
+        <BottomNav
+          activeTab={currentScreen === 'history' ? 'history' : 'home'}
+          onHomePress={() => navigate('home')}
+          onHistoryPress={() => navigate('history')}
+          onPickDocument={handlePickDocument}
+        />
+      )}
     </View>
   );
 }

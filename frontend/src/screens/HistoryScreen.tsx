@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 import {
   ScrollView,
   View,
@@ -13,50 +14,25 @@ import { Feather } from '@expo/vector-icons';
 import { theme } from '../../theme';
 import TouchScale from '../components/TouchScale';
 
-interface HistoryItem {
-  id: string;
-  title: string;
-  status: 'success' | 'failed' | 'warning';
-  statusLabel: string;
+interface LogEntry {
+  file_name: string;
+  status: 'proceed' | 'failed';
   time: string;
 }
 
-const HISTORY_DATA: HistoryItem[] = [
-  { id: '1', title: 'EU Tax Compliance Update 2024.pdf', status: 'success', statusLabel: 'Processed', time: '10 mins ago' },
-  { id: '2', title: 'Q3 Internal Audit Findings.docx', status: 'success', statusLabel: 'Processed', time: '2 hours ago' },
-  { id: '3', title: 'Legacy_Vendor_Contracts_Archive.zip', status: 'failed', statusLabel: 'Failed - Format', time: 'Yesterday' },
-  { id: '4', title: 'GDPR_Privacy_Policy_Review_v2.pdf', status: 'success', statusLabel: 'Processed', time: '2 days ago' },
-  { id: '5', title: 'SEC_Filing_10K_2024.docx', status: 'failed', statusLabel: 'Failed - Parse Error', time: '3 days ago' },
-  { id: '6', title: 'Cross_Border_Tariff_Update_H1.pdf', status: 'success', statusLabel: 'Processed', time: '4 days ago' },
-  { id: '7', title: 'Vendor_Due_Diligence_Report.xlsx', status: 'warning', statusLabel: 'Partial Match', time: '5 days ago' },
-  { id: '8', title: 'Anti_Corruption_Compliance_Check.pdf', status: 'success', statusLabel: 'Processed', time: '1 week ago' },
-  { id: '9', title: 'Trade_Sanctions_List_Update.csv', status: 'failed', statusLabel: 'Failed - Encoding', time: '1 week ago' },
-  { id: '10', title: 'Internal_Controls_Assessment_Q2.docx', status: 'success', statusLabel: 'Processed', time: '2 weeks ago' },
-];
-
-function getStatusColor(status: HistoryItem['status']) {
-  switch (status) {
-    case 'success':
-      return theme.colors.safe;
-    case 'failed':
-      return theme.colors.risk;
-    case 'warning':
-      return theme.colors.warning;
-  }
+function getStatusColor(status: LogEntry['status']) {
+  return status === 'failed' ? theme.colors.risk : theme.colors.safe;
 }
 
-function getStatusIcon(status: HistoryItem['status']) {
-  switch (status) {
-    case 'success':
-      return 'check-circle';
-    case 'failed':
-      return 'alert-circle';
-    case 'warning':
-      return 'alert-triangle';
-  }
+function getStatusIcon(status: LogEntry['status']) {
+  return status === 'failed' ? 'alert-circle' : 'check-circle';
 }
 
-function HistoryRow({ item }: { item: HistoryItem }) {
+function getStatusLabel(status: LogEntry['status']) {
+  return status === 'failed' ? 'Dismissed' : 'Processed';
+}
+
+function HistoryRow({ item }: { item: LogEntry }) {
   const statusColor = getStatusColor(item.status);
   const iconName = getStatusIcon(item.status);
 
@@ -66,12 +42,12 @@ function HistoryRow({ item }: { item: HistoryItem }) {
         <Feather name={iconName} size={16} color={statusColor} />
       </View>
       <View style={styles.historyContent}>
-        <Text style={styles.historyDocName} numberOfLines={1}>
-          {item.title}
+        <Text style={styles.historyDocName} numberOfLines={1} ellipsizeMode="tail">
+          {item.file_name}
         </Text>
         <View style={styles.historyMeta}>
           <Text style={[styles.historyStatus, { color: statusColor }]}>
-            {item.statusLabel}
+            {getStatusLabel(item.status)}
           </Text>
           <Text style={styles.historySep}>{'•'}</Text>
           <Text style={styles.historyTime}>{item.time}</Text>
@@ -88,6 +64,19 @@ interface HistoryScreenProps {
 export default function HistoryScreen({ onBack }: HistoryScreenProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const response = await axios.get('https://defuser-backend-413383043452.asia-southeast1.run.app/api/v1/dashboard/data');
+        setLogs(response.data.data.logs || []);
+      } catch (error) {
+        console.error('Failed to fetch logs:', error);
+      }
+    };
+    fetchLogs();
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -124,8 +113,8 @@ export default function HistoryScreen({ onBack }: HistoryScreenProps) {
             <Text style={styles.cardHeaderText}>Recent Ingestions</Text>
           </View>
           <View style={styles.cardBody}>
-            {HISTORY_DATA.map((item) => (
-              <HistoryRow key={item.id} item={item} />
+            {logs.map((item, index) => (
+              <HistoryRow key={index} item={item} />
             ))}
           </View>
         </View>

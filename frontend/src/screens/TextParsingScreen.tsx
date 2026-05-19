@@ -6,25 +6,27 @@ import { theme } from "../../theme";
 
 interface Step {
   label: string;
-  subtitle?: string;
 }
 
 const STEPS: Step[] = [
   { label: "Raw Text Ingestion & Validation" },
   { label: "Extracting Key Entities" },
-  { label: "Analyzing Semantic Structure", subtitle: "PARSING RELATIONS..." },
+  { label: "Analyzing Semantic Structure" },
   { label: "Cross-Referencing Directives" },
   { label: "Calculating Exposure Risk" },
 ];
 
 export default function TextParsingScreen({
   textContent,
+  payload,
   onParsingComplete,
 }: {
   textContent: string;
+  payload?: any;
   onParsingComplete: () => void;
 }) {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [animationFinished, setAnimationFinished] = useState(false);
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -58,15 +60,21 @@ export default function TextParsingScreen({
   }, [pulseAnim]);
 
   useEffect(() => {
+    if (activeStepIndex >= STEPS.length - 1) {
+      setAnimationFinished(true);
+      return;
+    }
     const timer = setTimeout(() => {
-      if (activeStepIndex < STEPS.length - 1) {
-        setActiveStepIndex((prev) => prev + 1);
-      } else {
-        onParsingComplete();
-      }
-    }, 4000);
+      setActiveStepIndex((prev) => prev + 1);
+    }, 800);
     return () => clearTimeout(timer);
-  }, [activeStepIndex, onParsingComplete]);
+  }, [activeStepIndex]);
+
+  useEffect(() => {
+    if (animationFinished && payload?.totals) {
+      onParsingComplete();
+    }
+  }, [animationFinished, payload, onParsingComplete]);
 
   const glowOpacity = pulseAnim.interpolate({
     inputRange: [0, 1],
@@ -181,11 +189,7 @@ export default function TextParsingScreen({
                           >
                             {step.label}
                           </Text>
-                          {isActive && step.subtitle && (
-                            <Text style={styles.stepSubtitle}>
-                              {step.subtitle}
-                            </Text>
-                          )}
+
                         </View>
                       </View>
                     </View>
@@ -453,13 +457,5 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     opacity: 0.4,
   },
-  stepSubtitle: {
-    fontFamily: theme.fonts.sansBold,
-    fontSize: 12,
-    color: theme.colors.action,
-    opacity: 0.6,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    marginTop: 2,
-  },
+
 });
