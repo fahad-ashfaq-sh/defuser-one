@@ -13,7 +13,7 @@
 
 ### _The Autonomous Fiscal Threat Defuser Engine_
 
-**Powered by Project Antigravity**
+**Powered by Antigravity**
 
 <br/>
 
@@ -155,6 +155,6 @@ _The AI only advises."_
 
 <br/>
 
-**Defuser One** · Powered by **Vision Edge**
+**Defuser One** · Powered by **Antigravity**
 
 </div>
